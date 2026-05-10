@@ -1,0 +1,3 @@
+[submodule "avatar-module-android"]
+	path = avatar-module-android
+	url = https://github.com/avatarmessanger/avatar-module-android.git

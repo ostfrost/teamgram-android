@@ -10292,6 +10292,8 @@
     <string name="SwitchThemeToDay">Day Mode</string>
     <string name="SwitchThemeToNight">Night Mode</string>
 
+    <string name="SettingsAvatar">Avatar</string>
+    <string name="SettingsAvatarInfo">Set your avatar</string>
     <string name="SettingsAccount">Account</string>
     <string name="SettingsAccounts">Accounts</string>
     <string name="SettingsAccountInfo">Number, Username, Bio</string>
