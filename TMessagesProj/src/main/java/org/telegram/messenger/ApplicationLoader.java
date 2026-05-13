@@ -32,6 +32,7 @@ import android.view.ViewGroup;
 
 import androidx.annotation.NonNull;
 
+import com.sousa.feature_avatar.bridge.ComposePrewarmHelper;
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.GooglePlayServicesUtil;
 
@@ -329,6 +330,7 @@ public class ApplicationLoader extends Application {
             public void onActivityStarted(Activity activity) {
                 boolean wasInBackground = isBackground();
                 super.onActivityStarted(activity);
+                ComposePrewarmHelper.prewarm(activity);
                 if (wasInBackground) {
                     ensureCurrentNetworkGet(true);
                 }
