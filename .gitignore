@@ -2,6 +2,7 @@
 .gradle/
 build/
 obj/
+.codex-temp/
 *.iml
 local.properties
 TMessagesProj/.cxx/

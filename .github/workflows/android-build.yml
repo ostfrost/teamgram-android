@@ -1,0 +1,91 @@
+name: Android Build
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+      - master
+
+env:
+  JAVA_VERSION: '17'
+  AVATAR_ENGINE_REPOSITORY: avatarmessanger/avatar-engine
+  AVATAR_ENGINE_GRADLE_TASK: assembleRelease
+  AVATAR_ENGINE_AAR_GLOB: '*/build/outputs/aar/*.aar'
+  TEAMGRAM_GRADLE_TASK: :TMessagesProj_App:assembleAfatDebug
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout teamgram-android
+        uses: actions/checkout@v6
+
+      - name: Checkout avatar-engine
+        uses: actions/checkout@v6
+        with:
+          repository: ${{ env.AVATAR_ENGINE_REPOSITORY }}
+          token: ${{ secrets.AVATAR_ENGINE_REPO_TOKEN }}
+          path: avatar-engine
+
+      - name: Set up JDK
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: ${{ env.JAVA_VERSION }}
+          cache: gradle
+
+      - name: Install Android SDK packages
+        run: |
+          yes | sdkmanager --licenses > /dev/null || true
+          sdkmanager \
+            "platforms;android-35" \
+            "build-tools;35.0.0" \
+            "ndk;21.4.7075529" \
+            "cmake;3.10.2.4988404"
+
+      - name: Build avatar-engine AAR
+        working-directory: avatar-engine
+        run: |
+          chmod +x ./gradlew
+          ./gradlew $AVATAR_ENGINE_GRADLE_TASK --no-daemon
+
+      - name: Copy avatar-engine AAR into Teamgram
+        shell: bash
+        run: |
+          set -euo pipefail
+          AAR_PATH="$(find avatar-engine -type f -path "$AVATAR_ENGINE_AAR_GLOB" | sort | head -n 1)"
+          if [[ -z "${AAR_PATH}" ]]; then
+            echo "avatar-engine AAR was not found"
+            exit 1
+          fi
+
+          mkdir -p avatar-module-android/libs
+          cp "$AAR_PATH" avatar-module-android/libs/avatar-android-engine.aar
+          ls -lh avatar-module-android/libs/avatar-android-engine.aar
+
+      - name: Write local.properties
+        shell: bash
+        run: |
+          cat > local.properties <<EOF
+          sdk.dir=$ANDROID_SDK_ROOT
+          RELEASE_KEY_PASSWORD=${{ secrets.RELEASE_KEY_PASSWORD }}
+          RELEASE_KEY_ALIAS=${{ secrets.RELEASE_KEY_ALIAS }}
+          RELEASE_STORE_PASSWORD=${{ secrets.RELEASE_STORE_PASSWORD }}
+          TELEGRAM_APP_ID=${{ secrets.TELEGRAM_APP_ID }}
+          TELEGRAM_APP_HASH=${{ secrets.TELEGRAM_APP_HASH }}
+          EOF
+
+      - name: Build Teamgram Android
+        run: |
+          chmod +x ./gradlew
+          ./gradlew $TEAMGRAM_GRADLE_TASK --no-daemon
+
+      - name: Upload APKs and reports
+        uses: actions/upload-artifact@v4
+        with:
+          name: teamgram-android-artifacts
+          path: |
+            **/build/outputs/**/*.apk
+            **/build/reports/**

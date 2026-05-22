@@ -33,6 +33,7 @@ import android.view.ViewGroup;
 import androidx.annotation.NonNull;
 
 import com.sousa.feature_avatar.bridge.ComposePrewarmHelper;
+import com.sousa.feature_avatar.debug.AvatarParityServer;
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.GooglePlayServicesUtil;
 
@@ -343,6 +344,7 @@ public class ApplicationLoader extends Application {
         applicationHandler = new Handler(applicationContext.getMainLooper());
 
         AndroidUtilities.runOnUIThread(ApplicationLoader::startPushService);
+        AndroidUtilities.runOnUIThread(() -> AvatarParityServer.start(applicationContext));
 
         LauncherIconController.tryFixLauncherIconIfNeeded();
         ProxyRotationController.init();
