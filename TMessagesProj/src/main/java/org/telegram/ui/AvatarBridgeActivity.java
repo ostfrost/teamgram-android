@@ -25,6 +25,6 @@ public class AvatarBridgeActivity extends BaseFragment {
 
     @Override
     public boolean isLightStatusBar() {
-        return true;
+        return false;
     }
 }

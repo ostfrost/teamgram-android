@@ -204,6 +204,7 @@ android {
 
         standalone {
             jniDebuggable false
+            matchingFallbacks = ['release']
             minifyEnabled true
             multiDexEnabled true
             proguardFiles getDefaultProguardFile('proguard-android.txt'), '../TMessagesProj/proguard-rules.pro'
