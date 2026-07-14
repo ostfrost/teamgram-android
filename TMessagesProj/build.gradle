@@ -9,6 +9,8 @@ if (localPropertiesFile.exists()) {
     localProperties.load(new FileInputStream(localPropertiesFile))
 }
 
+def targetAbi = (project.findProperty("TARGET_ABI") ?: "").toString().trim()
+
 repositories {
     mavenCentral()
     google()
@@ -119,6 +121,12 @@ android {
             cmake {
                 version '3.10.2'
                 arguments '-DANDROID_STL=c++_static', '-DANDROID_PLATFORM=android-21' //, '-DANDROID_SUPPORT_FLEXIBLE_PAGE_SIZES=ON'
+            }
+        }
+
+        if (targetAbi) {
+            ndk {
+                abiFilters targetAbi
             }
         }
 
