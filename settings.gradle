@@ -5,3 +5,5 @@ include ':TMessagesProj_App'
 // include ':TMessagesProj_AppStandalone'
 // include ':TMessagesProj_AppTests'
 include ':avatar-module-android'
+include ':avatar-bridge'
+

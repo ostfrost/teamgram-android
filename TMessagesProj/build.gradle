@@ -26,7 +26,7 @@ configurations.all {
 }
 
 dependencies {
-    implementation project(':avatar-module-android')
+    implementation project(':avatar-bridge')
     implementation 'androidx.core:core:1.16.0'
     implementation 'androidx.palette:palette:1.0.0'
     implementation 'androidx.exifinterface:exifinterface:1.3.6'
@@ -283,3 +283,4 @@ task checkVisibility {
 }
 
 preBuild.dependsOn checkVisibility
+
