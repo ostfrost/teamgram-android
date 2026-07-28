@@ -4,5 +4,9 @@ import android.content.Context
 import android.view.View
 
 interface TelegramExtensionPoint {
-    fun create(context: Context, onClose: () -> Unit): View
+    fun create(
+        context: Context,
+        onClose: () -> Unit,
+        stickerPackSyncCallback: TelegramStickerPackSyncCallback? = null
+    ): View
 }

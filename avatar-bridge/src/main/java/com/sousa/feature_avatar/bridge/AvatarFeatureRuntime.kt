@@ -8,8 +8,17 @@ import kotlin.jvm.functions.Function0
 internal object AvatarFeatureRuntime {
     private const val ENTRY_POINT = "com.sousa.feature_avatar.runtime.AvatarFeatureEntry"
 
-    fun create(context: Context, onClose: () -> Unit): View =
-        invoke("create", arrayOf(Context::class.java, Function0::class.java), context, onClose) as View
+    fun create(
+        context: Context,
+        onClose: () -> Unit,
+        stickerPackSyncCallback: TelegramStickerPackSyncCallback?
+    ): View = invoke(
+        "create",
+        arrayOf(Context::class.java, Function0::class.java, TelegramStickerPackSyncCallback::class.java),
+        context,
+        onClose,
+        stickerPackSyncCallback
+    ) as View
 
     fun prewarm(activity: Activity) {
         invoke("prewarm", arrayOf(Activity::class.java), activity)

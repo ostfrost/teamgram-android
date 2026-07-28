@@ -7,6 +7,8 @@ import android.view.View;
 import com.sousa.feature_avatar.bridge.AvatarExtension;
 
 import org.telegram.messenger.ApplicationLoader;
+import org.telegram.messenger.AvatarStickerSetSyncController;
+import org.telegram.messenger.UserConfig;
 import org.telegram.ui.ActionBar.BaseFragment;
 
 import kotlin.Unit;
@@ -20,7 +22,7 @@ public class AvatarBridgeActivity extends BaseFragment {
         fragmentView = AvatarExtension.INSTANCE.create(context, () -> {
             finishFragment();
             return Unit.INSTANCE;
-        });
+        }, new AvatarStickerSetSyncController(UserConfig.selectedAccount));
 
         return fragmentView;
     }
