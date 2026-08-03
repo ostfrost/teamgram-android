@@ -3,6 +3,8 @@
 build/
 obj/
 .codex-temp/
+.codebase-memory/
+.kotlin/
 *.iml
 local.properties
 TMessagesProj/.cxx/

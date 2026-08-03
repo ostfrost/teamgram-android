@@ -7,3 +7,4 @@ include ':TMessagesProj_App'
 include ':avatar-module-android'
 include ':avatar-bridge'
 
+include ':avatar-standalone-app'

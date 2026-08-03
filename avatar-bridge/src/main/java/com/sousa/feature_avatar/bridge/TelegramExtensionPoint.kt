@@ -9,4 +9,10 @@ interface TelegramExtensionPoint {
         onClose: () -> Unit,
         stickerPackSyncCallback: TelegramStickerPackSyncCallback? = null
     ): View
+
+    fun createGiftClaim(
+        context: Context,
+        token: String,
+        onClose: () -> Unit
+    ): View
 }

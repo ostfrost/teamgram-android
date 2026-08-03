@@ -20,6 +20,18 @@ internal object AvatarFeatureRuntime {
         stickerPackSyncCallback
     ) as View
 
+    fun createGiftClaim(
+        context: Context,
+        token: String,
+        onClose: () -> Unit
+    ): View = invoke(
+        "createGiftClaim",
+        arrayOf(Context::class.java, String::class.java, Function0::class.java),
+        context,
+        token,
+        onClose
+    ) as View
+
     fun prewarm(activity: Activity) {
         invoke("prewarm", arrayOf(Activity::class.java), activity)
     }

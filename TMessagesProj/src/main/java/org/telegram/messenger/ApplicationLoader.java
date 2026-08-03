@@ -344,7 +344,9 @@ public class ApplicationLoader extends Application {
         applicationHandler = new Handler(applicationContext.getMainLooper());
 
         AndroidUtilities.runOnUIThread(ApplicationLoader::startPushService);
-        AndroidUtilities.runOnUIThread(() -> AvatarParityServer.start(applicationContext));
+        if (BuildVars.DEBUG_VERSION) {
+            AndroidUtilities.runOnUIThread(() -> AvatarParityServer.start(applicationContext));
+        }
 
         LauncherIconController.tryFixLauncherIconIfNeeded();
         ProxyRotationController.init();
