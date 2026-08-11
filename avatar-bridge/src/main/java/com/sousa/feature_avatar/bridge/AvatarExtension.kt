@@ -9,10 +9,4 @@ object AvatarExtension : TelegramExtensionPoint {
         onClose: () -> Unit,
         stickerPackSyncCallback: TelegramStickerPackSyncCallback?
     ): View = AvatarFeatureRuntime.create(context, onClose, stickerPackSyncCallback)
-
-    override fun createGiftClaim(
-        context: Context,
-        token: String,
-        onClose: () -> Unit
-    ): View = AvatarFeatureRuntime.createGiftClaim(context, token, onClose)
 }
