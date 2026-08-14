@@ -20,3 +20,5 @@ TMessagesProj_AppHuawei/afat/
 *.keystore
 *.jks
 TMessagesProj_App/google-services.json
+/TMessagesProj/AGENTS.md
+/AGENTS.md
