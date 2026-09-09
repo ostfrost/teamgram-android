@@ -9,4 +9,21 @@ object AvatarExtension : TelegramExtensionPoint {
         onClose: () -> Unit,
         stickerPackSyncCallback: TelegramStickerPackSyncCallback?
     ): View = AvatarFeatureRuntime.create(context, onClose, stickerPackSyncCallback)
+
+    override fun createWithHostCallbacks(
+        context: Context,
+        onClose: () -> Unit,
+        stickerPackSyncCallback: TelegramStickerPackSyncCallback?,
+        hostCallback: TelegramAvatarHostCallback,
+        reactionTarget: TelegramAvatarReactionTarget?
+    ): View = AvatarFeatureRuntime.createWithHostCallbacks(
+        context, onClose, stickerPackSyncCallback, hostCallback, reactionTarget
+    )
+
+    override fun sendReaction(
+        context: Context,
+        target: TelegramAvatarReactionTarget,
+        reactionKind: String,
+        callback: TelegramAvatarReactionSendCallback
+    ) = AvatarFeatureRuntime.sendReaction(context, target, reactionKind, callback)
 }

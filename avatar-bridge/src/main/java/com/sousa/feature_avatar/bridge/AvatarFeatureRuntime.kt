@@ -20,6 +20,45 @@ internal object AvatarFeatureRuntime {
         stickerPackSyncCallback
     ) as View
 
+    fun createWithHostCallbacks(
+        context: Context,
+        onClose: () -> Unit,
+        stickerPackSyncCallback: TelegramStickerPackSyncCallback?,
+        hostCallback: TelegramAvatarHostCallback,
+        reactionTarget: TelegramAvatarReactionTarget?
+    ): View = invoke(
+        "createWithHostCallbacks",
+        arrayOf(
+            Context::class.java,
+            Function0::class.java,
+            TelegramStickerPackSyncCallback::class.java,
+            TelegramAvatarHostCallback::class.java,
+            TelegramAvatarReactionTarget::class.java
+        ),
+        context, onClose, stickerPackSyncCallback, hostCallback, reactionTarget
+    ) as View
+
+    fun sendReaction(
+        context: Context,
+        target: TelegramAvatarReactionTarget,
+        reactionKind: String,
+        callback: TelegramAvatarReactionSendCallback
+    ) {
+        invoke(
+            "sendReaction",
+            arrayOf(
+                Context::class.java,
+                TelegramAvatarReactionTarget::class.java,
+                String::class.java,
+                TelegramAvatarReactionSendCallback::class.java
+            ),
+            context,
+            target,
+            reactionKind,
+            callback
+        )
+    }
+
     fun prewarm(activity: Activity) {
         invoke("prewarm", arrayOf(Activity::class.java), activity)
     }

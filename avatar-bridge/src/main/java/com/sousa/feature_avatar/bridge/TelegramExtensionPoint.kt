@@ -9,4 +9,19 @@ interface TelegramExtensionPoint {
         onClose: () -> Unit,
         stickerPackSyncCallback: TelegramStickerPackSyncCallback? = null
     ): View
+
+    fun createWithHostCallbacks(
+        context: Context,
+        onClose: () -> Unit,
+        stickerPackSyncCallback: TelegramStickerPackSyncCallback? = null,
+        hostCallback: TelegramAvatarHostCallback,
+        reactionTarget: TelegramAvatarReactionTarget? = null
+    ): View = create(context, onClose, stickerPackSyncCallback)
+
+    fun sendReaction(
+        context: Context,
+        target: TelegramAvatarReactionTarget,
+        reactionKind: String,
+        callback: TelegramAvatarReactionSendCallback
+    )
 }
