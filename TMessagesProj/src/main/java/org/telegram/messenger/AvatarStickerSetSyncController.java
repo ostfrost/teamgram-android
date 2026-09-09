@@ -2,6 +2,8 @@ package org.telegram.messenger;
 
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.graphics.Color;
+import android.media.MediaMetadataRetriever;
 
 import com.sousa.feature_avatar.bridge.TelegramStickerPackSyncCallback;
 import com.sousa.feature_avatar.bridge.TelegramStickerPackSyncRequest;
@@ -31,6 +33,10 @@ public class AvatarStickerSetSyncController implements TelegramStickerPackSyncCa
     // pack keeps the 512px frames the avatar module renders.
     private static final int CUSTOM_EMOJI_SIZE = 100;
     private static final int STICKER_SIZE = 512;
+    // Answered by the server on 2026-09-09: uploading the pack's 512px webm into an emoji set is
+    // refused with STICKER_VIDEO_DIMENSIONS, and no 100px webm exists to send instead. So animated
+    // emotions enter the emoji set as their opening frame — the M5 static fallback — and become
+    // real animations once the avatar service emits a 100px variant.
 
     private final int currentAccount;
 
@@ -105,8 +111,8 @@ public class AvatarStickerSetSyncController implements TelegramStickerPackSyncCa
     private void createStickerSet(TelegramStickerPackSyncRequest request, String shortName, boolean emojiSet, Runnable onDone) {
         uploadUnits(request.getUnits(), new ArrayList<>(), 0, emojiSet, inputItems -> {
             boolean complete = inputItems.size() == request.getUnits().size();
-            // The emoji set is expected to be short of the animated units until the avatar module
-            // can render them at 100px, so a partial set is still worth creating there; the sticker
+            // An emoji set may legitimately come up short: an animated unit Telegram refuses is
+            // still worth a set holding the rest, so the static emotions keep working. The sticker
             // pack stays all-or-nothing.
             if (!complete && !emojiSet) {
                 FileLog.w(TAG + ": create skipped, uploaded " + inputItems.size() + " of " + request.getUnits().size());
@@ -251,16 +257,8 @@ public class AvatarStickerSetSyncController implements TelegramStickerPackSyncCa
             startUpload(unit, unit.getFilePath(), false, null, done);
             return;
         }
-        if (unit.getAnimated() || !"image/webp".equals(unit.getMimeType())) {
-            // A 100px webm can only come from the avatar module's renderer; nothing here can
-            // transcode one, so animated emotions stay out of the emoji set for now.
-            FileLog.w(TAG + ": emoji set skips animated unit " + unit.getEmotionId()
-                    + ", needs a " + CUSTOM_EMOJI_SIZE + "px webm from the avatar module");
-            done.run(null);
-            return;
-        }
         Utilities.globalQueue.postRunnable(() -> {
-            File scaled = scaleForCustomEmoji(file, unit);
+            File scaled = scaleForCustomEmoji(emojiSource(unit, file), unit);
             AndroidUtilities.runOnUIThread(() -> {
                 if (scaled == null) {
                     done.run(null);
@@ -292,12 +290,30 @@ public class AvatarStickerSetSyncController implements TelegramStickerPackSyncCa
         });
     }
 
-    /** Rescales one static avatar frame to the size Telegram accepts for a custom emoji. */
+    /**
+     * Picks what a custom emoji is built from. An animated emotion ships as a webm, but the module
+     * also hands over its transparent still, and that still is the only source whose alpha survives
+     * — pulling a frame out of the video flattens it onto black.
+     */
+    private static File emojiSource(TelegramStickerPackUnit unit, File packaged) {
+        String staticFrame = unit.getStaticFramePath();
+        if (staticFrame == null) {
+            return packaged;
+        }
+        File frame = new File(staticFrame);
+        if (!frame.isFile() || frame.length() == 0) {
+            FileLog.w(TAG + ": no still frame on disk for " + unit.getEmotionId() + " at " + staticFrame);
+            return packaged;
+        }
+        return frame;
+    }
+
+    /** Rescales one avatar frame to the size Telegram accepts for a custom emoji. */
     private File scaleForCustomEmoji(File source, TelegramStickerPackUnit unit) {
         Bitmap decoded = null;
         Bitmap scaled = null;
         try {
-            decoded = BitmapFactory.decodeFile(source.getAbsolutePath());
+            decoded = decodeEmojiFrame(source, unit);
             if (decoded == null) {
                 FileLog.w(TAG + ": could not decode " + unit.getEmotionId() + " for the emoji set");
                 return null;
@@ -329,6 +345,48 @@ public class AvatarStickerSetSyncController implements TelegramStickerPackSyncCa
         }
     }
 
+    /**
+     * Normally the source is already a transparent still and decodes directly. Extracting the
+     * opening frame from a webm is the last resort, for a module build that sends no still: the
+     * alpha does not survive it, so the result is checked and reported rather than shipped silently.
+     */
+    private static Bitmap decodeEmojiFrame(File source, TelegramStickerPackUnit unit) {
+        if (!source.getAbsolutePath().endsWith(".webm")) {
+            return BitmapFactory.decodeFile(source.getAbsolutePath());
+        }
+        MediaMetadataRetriever retriever = new MediaMetadataRetriever();
+        try {
+            retriever.setDataSource(source.getAbsolutePath());
+            Bitmap frame = retriever.getFrameAtTime(0, MediaMetadataRetriever.OPTION_CLOSEST_SYNC);
+            if (frame == null) {
+                FileLog.w(TAG + ": no first frame in " + source.getAbsolutePath());
+                return null;
+            }
+            FileLog.d(TAG + ": " + unit.getEmotionId() + " falls back to its first frame, "
+                    + (looksTransparent(frame) ? "transparency kept" : "TRANSPARENCY LOST"));
+            return frame;
+        } catch (Exception error) {
+            FileLog.e(error);
+            return null;
+        } finally {
+            try {
+                retriever.release();
+            } catch (Exception ignored) {
+                // Releasing a retriever that never opened anything is not worth reporting.
+            }
+        }
+    }
+
+    /** Corner sampling: an avatar sits in the middle, so opaque corners mean the alpha is gone. */
+    private static boolean looksTransparent(Bitmap bitmap) {
+        int right = bitmap.getWidth() - 1;
+        int bottom = bitmap.getHeight() - 1;
+        return Color.alpha(bitmap.getPixel(0, 0)) < 255
+                || Color.alpha(bitmap.getPixel(right, 0)) < 255
+                || Color.alpha(bitmap.getPixel(0, bottom)) < 255
+                || Color.alpha(bitmap.getPixel(right, bottom)) < 255;
+    }
+
     private static void deleteTemp(File file) {
         if (file == null) {
             return;
@@ -345,14 +403,17 @@ public class AvatarStickerSetSyncController implements TelegramStickerPackSyncCa
         uploadMedia.peer = new TLRPC.TL_inputPeerSelf();
         TLRPC.TL_inputMediaUploadedDocument media = new TLRPC.TL_inputMediaUploadedDocument();
         media.file = inputFile;
-        media.mime_type = unit.getMimeType();
-        if ("video/webm".equals(unit.getMimeType())) {
+        // Every emoji-set unit is rescaled to a static webp first, so carrying the unit's original
+        // video mime and attributes would describe a file we are not sending, and the server calls
+        // that out as STICKER_VIDEO_NOWEBM.
+        media.mime_type = emojiSet ? "image/webp" : unit.getMimeType();
+        if (!emojiSet && "video/webm".equals(unit.getMimeType())) {
             media.nosound_video = true;
+            // Video is uploaded untouched, so the attributes have to describe the actual file:
+            // declaring a size it does not have would make a rejection say the wrong thing.
             TLRPC.TL_documentAttributeVideo videoAttr = new TLRPC.TL_documentAttributeVideo();
             videoAttr.nosound = true;
-            videoAttr.duration = 1.0;
-            videoAttr.w = emojiSet ? CUSTOM_EMOJI_SIZE : STICKER_SIZE;
-            videoAttr.h = videoAttr.w;
+            describeVideo(unit.getFilePath(), videoAttr);
             media.attributes.add(videoAttr);
         }
         TLRPC.TL_documentAttributeSticker attr = new TLRPC.TL_documentAttributeSticker();
@@ -379,6 +440,44 @@ public class AvatarStickerSetSyncController implements TelegramStickerPackSyncCa
                 done.run(null);
             }
         }), ConnectionsManager.RequestFlagFailOnServerErrors);
+    }
+
+    private static void describeVideo(String path, TLRPC.TL_documentAttributeVideo videoAttr) {
+        videoAttr.w = STICKER_SIZE;
+        videoAttr.h = STICKER_SIZE;
+        videoAttr.duration = 1.0;
+        MediaMetadataRetriever retriever = new MediaMetadataRetriever();
+        try {
+            retriever.setDataSource(path);
+            int width = metadataInt(retriever, MediaMetadataRetriever.METADATA_KEY_VIDEO_WIDTH);
+            int height = metadataInt(retriever, MediaMetadataRetriever.METADATA_KEY_VIDEO_HEIGHT);
+            int durationMs = metadataInt(retriever, MediaMetadataRetriever.METADATA_KEY_DURATION);
+            if (width > 0 && height > 0) {
+                videoAttr.w = width;
+                videoAttr.h = height;
+            }
+            if (durationMs > 0) {
+                videoAttr.duration = durationMs / 1000.0;
+            }
+            FileLog.d(TAG + ": video " + path + " is " + videoAttr.w + "x" + videoAttr.h
+                    + " " + videoAttr.duration + "s");
+        } catch (Exception error) {
+            FileLog.w(TAG + ": could not read video metadata for " + path);
+        } finally {
+            try {
+                retriever.release();
+            } catch (Exception ignored) {
+                // Releasing a retriever that never opened anything is not worth reporting.
+            }
+        }
+    }
+
+    private static int metadataInt(MediaMetadataRetriever retriever, int key) {
+        try {
+            return Integer.parseInt(retriever.extractMetadata(key));
+        } catch (Exception error) {
+            return 0;
+        }
     }
 
     private void installIfNeeded(TLRPC.TL_messages_stickerSet set) {
