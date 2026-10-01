@@ -22,7 +22,7 @@ Universal build size for the same codebase:
 Notes:
 
 - The universal build values are calculated from the current `arm64-v8a` APK Analyzer data and the expected extra native payload for `armeabi-v7a` and `x86_64`.
-- The largest contributors are native libraries in `lib/` and heavy assets such as `assets/model.glb`.
+- The largest contributors are native libraries in `lib/` and heavy assets such as `assets/male.glb`.
 - The current `arm64-v8a` build is the smallest practical APK artifact for direct distribution.
 
 ## ML Kit performance
