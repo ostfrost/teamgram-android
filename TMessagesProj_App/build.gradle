@@ -47,6 +47,12 @@ android {
 
     sourceSets.main.jniLibs.srcDirs = ['../TMessagesProj/jni/']
 
+    androidResources {
+        // Avatar GLBs/JSON are mapped straight from the APK by the engine; deflating them forces a
+        // full 20-28 MB inflate on every body load. Library modules cannot set this for the app.
+        noCompress += ['glb', 'json']
+    }
+
     lintOptions {
         disable 'MissingTranslation'
         disable 'ExtraTranslation'
