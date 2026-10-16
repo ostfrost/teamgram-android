@@ -15329,6 +15329,12 @@ public class MessagesController extends BaseController implements NotificationCe
         }
         getUserConfig().clearConfig();
         SharedPrefsHelper.cleanupAccount(currentAccount);
+        // Logout, terminated session and account deletion all end here; avatar data must not outlive them.
+        try {
+            com.sousa.feature_avatar.bridge.AvatarExtension.INSTANCE.purgePersonalData(ApplicationLoader.applicationContext);
+        } catch (Throwable e) {
+            FileLog.e(e);
+        }
 
         boolean shouldHandle = true;
         ArrayList<NotificationCenter.NotificationCenterDelegate> observers = getNotificationCenter().getObservers(NotificationCenter.appDidLogout);

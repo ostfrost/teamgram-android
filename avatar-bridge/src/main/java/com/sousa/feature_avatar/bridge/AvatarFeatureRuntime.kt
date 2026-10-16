@@ -59,6 +59,10 @@ internal object AvatarFeatureRuntime {
         )
     }
 
+    fun purgePersonalData(context: Context) {
+        invoke("purgePersonalData", arrayOf(Context::class.java), context)
+    }
+
     fun prewarm(activity: Activity) {
         invoke("prewarm", arrayOf(Activity::class.java), activity)
     }

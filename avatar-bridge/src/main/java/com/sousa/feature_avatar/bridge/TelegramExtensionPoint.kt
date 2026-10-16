@@ -24,4 +24,7 @@ interface TelegramExtensionPoint {
         reactionKind: String,
         callback: TelegramAvatarReactionSendCallback
     )
+
+    /** Call on Telegram logout and account deletion: removes the avatar session and local avatar data. */
+    fun purgePersonalData(context: Context) = Unit
 }

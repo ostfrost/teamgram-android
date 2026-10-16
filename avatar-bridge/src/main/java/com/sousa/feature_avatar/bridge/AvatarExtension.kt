@@ -26,4 +26,6 @@ object AvatarExtension : TelegramExtensionPoint {
         reactionKind: String,
         callback: TelegramAvatarReactionSendCallback
     ) = AvatarFeatureRuntime.sendReaction(context, target, reactionKind, callback)
+
+    override fun purgePersonalData(context: Context) = AvatarFeatureRuntime.purgePersonalData(context)
 }
